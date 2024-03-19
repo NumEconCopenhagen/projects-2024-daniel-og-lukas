@@ -5,6 +5,8 @@ plt.rcParams.update({'font.size': 14})
 
 from ExchangeEconomy import ExchangeEconomyClass
 
+model = ExchangeEconomyClass()
+
 par = model.par
 
 # a. total endowment
@@ -40,3 +42,4 @@ ax_B.set_xlim([w1bar + 0.1, -0.1])
 ax_B.set_ylim([w2bar + 0.1, -0.1])
 
 ax_A.legend(frameon=True,loc='upper right',bbox_to_anchor=(1.6,1.0));
+
