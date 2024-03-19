@@ -1,9 +1,8 @@
-# \[Group name\]
+# \[Daniel og Lukas\]
 
 **Group members:**
-- A
-- B
-- C
+- Lukas
+- Daniel
 
 This repository contains  
 1. Inaugural project. 
