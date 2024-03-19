@@ -2,7 +2,7 @@
 
 **Group members:**
 - Lukas
-- Daniel s
+- Daniel
 
 This repository contains  
 1. Inaugural project. 
