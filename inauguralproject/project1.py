@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 plt.rcParams.update({"axes.grid":True,"grid.color":"black","grid.alpha":"0.25","grid.linestyle":"--"})
 plt.rcParams.update({'font.size': 14})
 
+%load_ext autoreload
+%autoreload 2
+
 from ExchangeEconomy import ExchangeEconomyClass
 
 model = ExchangeEconomyClass()
@@ -43,3 +46,4 @@ ax_B.set_ylim([w2bar + 0.1, -0.1])
 
 ax_A.legend(frameon=True,loc='upper right',bbox_to_anchor=(1.6,1.0));
 
+plt.show()
