@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 
 class ExchangeEconomyClass:
-
+    #par = self.par = SimpleNamespace()
     def __init__(self):
 
         par = self.par = SimpleNamespace()
@@ -14,17 +14,20 @@ class ExchangeEconomyClass:
         par.w1A = 0.8
         par.w2A = 0.3
 
+        par.w1B = 1 - par.w1A 
+        par.w2B = 1 - par.w2A
+
     def utility_A(self,x1A,x2A):
-        pass
+        return x1A**self.par.alpha*x2A**(1-self.par.alpha)
 
     def utility_B(self,x1B,x2B):
-        pass
+        return x1B**self.par.beta*x2B**(1-self.par.beta)
 
     def demand_A(self,p1):
-        pass
+        return self.par.alpha*(p1*self.par.w1A+self.par.w2A)/p1, (1-self.par.alpha)*(p1*self.par.w1A+self.par.w2A)
 
     def demand_B(self,p1):
-        pass
+        return self.par.beta*(p1*self.par.w1B+self.par.w2B)/p1, (1-self.par.beta)*(p1*self.par.w1B+self.par.w2B)
 
     def check_market_clearing(self,p1):
 
