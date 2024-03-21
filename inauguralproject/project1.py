@@ -5,7 +5,7 @@ plt.rcParams.update({'font.size': 14})
 
 from ExchangeEconomy import ExchangeEconomyClass
 
-model = ExchangeEconomyClass() xxx
+model = ExchangeEconomyClass() 
 
 par = model.par
 
