@@ -5,7 +5,7 @@ plt.rcParams.update({'font.size': 14})
 
 from ExchangeEconomy import ExchangeEconomyClass
 
-model = ExchangeEconomyClass()
+model = ExchangeEconomyClass() xxx
 
 par = model.par
 
@@ -43,7 +43,11 @@ ax_B.set_ylim([w2bar + 0.1, -0.1])
 
 ax_A.legend(frameon=True,loc='upper right',bbox_to_anchor=(1.6,1.0));
 
+<<<<<<< HEAD
 print()
 
 
 
+=======
+plt.show()
+>>>>>>> a5eeb5ceb99e49e1d1e30359ebda7f729c4444d1
