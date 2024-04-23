@@ -11,35 +11,26 @@ import json
 
 # We load in our datasets 
 Main = pd.read_csv('TradeandGDP2021.csv', sep=';')
-
-# List of columns to convert
-columns_to_convert = Main.columns[1:]
-
-# Replace commas with periods and convert to float
-for column in columns_to_convert:
-    Main[column] = Main[column].str.replace(',', '.').astype(float).round(1)
-
-Main['RussianDependency2021'] = ((Main['ImportFromRussia2021'] + Main['ExportToRussia2021']) / Main['GDP2021']*100).round(1)
-
 Inf = pd.read_csv('Priceindex.csv', sep=';')
 
-# List of columns to convert
-columns_to_convert = Inf.columns[1:]
+# Replace commas with periods and convert to float for Main
+columns_to_convert = Main.columns[1:]
+for column in columns_to_convert:
+    Main[column] = Main[column].str.replace(',', '.').astype(float).round(1)
+# Calculate RussianDependency2021
+Main['RussianDependency2021'] = ((Main['ImportFromRussia2021'] + Main['ExportToRussia2021']) / Main['GDP2021']*100).round(1)
 
-# Replace commas with periods and convert to float
+# Replace commas with periods and convert to float for Inf
+columns_to_convert = Inf.columns[1:]
 for column in columns_to_convert:
     Inf[column] = Inf[column].str.replace(',', '.').astype(float)
 
-# Calculate the percentage change in inflation for each country
-# Assuming your time column is named 'TIME' and the DataFrame is named 'Inf'
+# Calculate the percentage change in inflation for each country into a new Dataframe and dropping the first row as that becomes Nan
 inflation_change = Inf.iloc[:, 1:].pct_change().multiply(100)
-
-# Now, you can combine this with the 'TIME' column to form a complete new DataFrame
-# This adds the 'TIME' column as the first column in the new DataFrame
 InfChange = pd.concat([Inf['TIME'], inflation_change], axis=1)
 InfChange = InfChange.drop(InfChange.index[0])
 
-
+# We want to calculate an avg pre war and post war for each country and fin the difference
 # Define the time periods
 start_period_1 = '2015-02'
 end_period_1 = '2022-02'
@@ -48,15 +39,15 @@ end_period_2 = '2023-08'
 
 # Filter the DataFrame for the first time period and calculate the mean
 first_period = InfChange[(InfChange['TIME'] > start_period_1) & (InfChange['TIME'] <= end_period_1)]
-avg_change_period_1 = first_period.iloc[:, 1:].mean()  # Exclude 'TIME' column when calculating the mean
+avg_change_period_1 = first_period.iloc[:, 1:].mean()  # Exclude 'TIME' column
 
 # Filter the DataFrame for the second time period and calculate the mean
 second_period = InfChange[(InfChange['TIME'] > start_period_2) & (InfChange['TIME'] <= end_period_2)]
 avg_change_period_2 = second_period.iloc[:, 1:].mean()  # Exclude 'TIME' column
 
-# Now you can create your new DataFrame
+
 AVGInfChange = pd.DataFrame({
-    'Country': InfChange.columns[1:],  # Assuming the first column is 'TIME' and should be excluded
+    'Country': InfChange.columns[1:],  # The first column is 'TIME' and should be excluded
     'AVGPreWarInf': avg_change_period_1.values,
     'AVGPostWarInf': avg_change_period_2.values
 })
