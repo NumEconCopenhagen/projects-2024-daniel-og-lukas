@@ -104,6 +104,67 @@ def get_country_code(country_name):
 
 Main['Country_Code'] = Main['Country'].apply(get_country_code)
 
+# Removing columns in a new dataframe for presentation
+
+columns_to_drop = ['ImportFromRussia2021', 'ExportToRussia2021', 'GDP2021', 
+                   'AVGPreWarInf', 'AVGPostWarInf', 'AVGPreWarGDP', 'AVGPostWarGDP']
+
+# Create a new DataFrame without the specified columns
+CleanMain = Main.drop(columns=columns_to_drop)
+
+def barchart(df):
+    # Create figure and axes for the plot
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+    # List of variables to plot
+    variables = ['RussianDependency2021', 'PostWarINFChange', 'PostWarGDPChange']
+    
+    # Loop through each variable and create a bar plot
+    for i, variable in enumerate(variables):
+        sorted_df = df.sort_values(by=variable)
+        ax = axes[i]
+        ax.bar(sorted_df['Country'], sorted_df[variable], color='skyblue')
+        ax.set_xlabel('Country')
+        ax.set_ylabel(variable)
+        ax.set_title(f'{variable} by Country')
+        ax.tick_params(axis='x', rotation=90)
+
+    # Adjust layout and display the plot
+    plt.tight_layout()
+    plt.show()
+
+
+def scatterplot(df):
+    # Extracting data
+    x = df['RussianDependency2021']
+    y1 = df['PostWarINFChange']
+    y2 = df['PostWarGDPChange']
+
+    # Fit linear regression models
+    m1, b1 = np.polyfit(x, y1, 1)  # For PostWarINFChange
+    m2, b2 = np.polyfit(x, y2, 1)  # For PostWarGDPChange
+
+    # Create a figure and a set of subplots
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
+
+    # Plotting the first subplot for PostWarINFChange
+    axes[0].scatter(x, y1, color='blue')  # Scatter plot
+    axes[0].plot(x, m1 * x + b1, color='red')  # Regression line
+    axes[0].set_title('Russian Dependency vs Post-War Inflation Change')
+    axes[0].set_xlabel('Russian Dependency 2021')
+    axes[0].set_ylabel('Post-War Inflation Change')
+
+    # Plotting the second subplot for PostWarGDPChange
+    axes[1].scatter(x, y2, color='green')  # Scatter plot
+    axes[1].plot(x, m2 * x + b2, color='red')  # Regression line
+    axes[1].set_title('Russian Dependency vs Post-War GDP Change')
+    axes[1].set_xlabel('Russian Dependency 2021')
+    axes[1].set_ylabel('Post-War GDP Change')
+
+    # Improve layout and display the plot
+    plt.tight_layout()
+    plt.show()
+
 # Define the lookup table for country coordinates
 country_coordinates = {
     "Austria": (47.5162, 14.5501),
@@ -143,7 +204,8 @@ m1 = folium.Map(location=[54, 15], tiles="OpenStreetMap", zoom_start=4)
 def make_popup(country_row):
     return folium.Popup(f"Country: {country_row['Country']}<br>"
                         f"RussianDependency2021: {country_row['RussianDependency2021']}<br>"
-                        f"PostWarINFChange: {country_row['PostWarINFChange']}", max_width=300)
+                        f"PostWarINFChange: {country_row['PostWarINFChange']}<br>"
+                        f"PostWarGDPChange: {country_row['PostWarGDPChange']}", max_width=300)
 
 # Add markers to the map
 for idx, row in Main.iterrows():
