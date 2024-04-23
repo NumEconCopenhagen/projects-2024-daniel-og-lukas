@@ -5,32 +5,66 @@ import ipywidgets as widgets
 from matplotlib_venn import venn2
 
 # user written modules
-import dataproject
 import folium
 import pycountry
 import json
 
 # We load in our datasets 
-RDependency = pd.read_csv('RDependency.csv', sep=';')
-RGDPChange = pd.read_csv('RGDPChange.csv', sep=';')
-RINFChange = pd.read_csv('RINFChange.csv', sep=';')
+Main = pd.read_csv('TradeandGDP2021.csv', sep=';')
 
-# Replaced , with . for python use 
-RDependency['RussianDependency'] = RDependency['RussianDependency'].str.replace(',', '.')
-RGDPChange['GDPChange'] = RGDPChange['GDPChange'].str.replace(',', '.')
-RINFChange['INFChange'] = RINFChange['INFChange'].str.replace(',', '.')
+# List of columns to convert
+columns_to_convert = Main.columns[1:]
 
-# Change data type to numeric
-RDependency['RussianDependency'] = pd.to_numeric(RDependency['RussianDependency'], errors='coerce')
-RGDPChange['GDPChange'] = pd.to_numeric(RGDPChange['GDPChange'], errors='coerce')
-RINFChange['INFChange'] = pd.to_numeric(RINFChange['INFChange'], errors='coerce')
+# Replace commas with periods and convert to float
+for column in columns_to_convert:
+    Main[column] = Main[column].str.replace(',', '.').astype(float).round(1)
 
-# Merge our data sets into a single DataFrame
-merged_df = pd.merge(RDependency, RGDPChange, on='Country', how='inner')
-final_merged_df = pd.merge(merged_df, RINFChange, on='Country', how='inner')
+Main['RussianDependency2021'] = ((Main['ImportFromRussia2021'] + Main['ExportToRussia2021']) / Main['GDP2021']*100).round(1)
 
-# Round decimals to 2 
-FinalDF = final_merged_df.round({'RussianDependency': 2, 'GDPChange': 2, 'INFChange': 2})
+Inf = pd.read_csv('Priceindex.csv', sep=';')
+
+# List of columns to convert
+columns_to_convert = Inf.columns[1:]
+
+# Replace commas with periods and convert to float
+for column in columns_to_convert:
+    Inf[column] = Inf[column].str.replace(',', '.').astype(float)
+
+# Calculate the percentage change in inflation for each country
+# Assuming your time column is named 'TIME' and the DataFrame is named 'Inf'
+inflation_change = Inf.iloc[:, 1:].pct_change().multiply(100)
+
+# Now, you can combine this with the 'TIME' column to form a complete new DataFrame
+# This adds the 'TIME' column as the first column in the new DataFrame
+InfChange = pd.concat([Inf['TIME'], inflation_change], axis=1)
+InfChange = InfChange.drop(InfChange.index[0])
+
+
+# Define the time periods
+start_period_1 = '2015-02'
+end_period_1 = '2022-02'
+start_period_2 = '2022-03'
+end_period_2 = '2023-08'
+
+# Filter the DataFrame for the first time period and calculate the mean
+first_period = InfChange[(InfChange['TIME'] > start_period_1) & (InfChange['TIME'] <= end_period_1)]
+avg_change_period_1 = first_period.iloc[:, 1:].mean()  # Exclude 'TIME' column when calculating the mean
+
+# Filter the DataFrame for the second time period and calculate the mean
+second_period = InfChange[(InfChange['TIME'] > start_period_2) & (InfChange['TIME'] <= end_period_2)]
+avg_change_period_2 = second_period.iloc[:, 1:].mean()  # Exclude 'TIME' column
+
+# Now you can create your new DataFrame
+AVGInfChange = pd.DataFrame({
+    'Country': InfChange.columns[1:],  # Assuming the first column is 'TIME' and should be excluded
+    'AVGPreWarInf': avg_change_period_1.values,
+    'AVGPostWarInf': avg_change_period_2.values
+})
+
+AVGInfChange['PostWarINFChange']= (AVGInfChange['AVGPostWarInf'] - AVGInfChange['AVGPreWarInf']).round(2)
+
+# Merging the two dataframes
+Main = pd.merge(Main, AVGInfChange, on='Country', how='inner')
 
 # Adding country codes to our dataframe
 def get_country_code(country_name):
@@ -39,32 +73,7 @@ def get_country_code(country_name):
     except LookupError:
         return None 
 
-FinalDF['Country_Code'] = FinalDF['Country'].apply(get_country_code)
-
-
-
-# Print to check DataFrame
-print(FinalDF)
-
-# Data plot
-fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-
-# Plot each variable, sorted by the values of that variable
-variables = ['RussianDependency', 'GDPChange', 'INFChange']
-for i, variable in enumerate(variables):
-    # Sort the DataFrame by the current variable
-    sorted_df = FinalDF.sort_values(by=variable)
-    ax = axes[i]
-    ax.bar(sorted_df['Country'], sorted_df[variable], color='skyblue')
-    ax.set_xlabel('Country')
-    ax.set_ylabel(variable)
-    ax.set_title(f'{variable} by Country')
-    ax.tick_params(axis='x', rotation=90)
-
-plt.tight_layout()
-
-
-plt.show()
+Main['Country_Code'] = Main['Country'].apply(get_country_code)
 
 # Define the lookup table for country coordinates
 country_coordinates = {
@@ -99,17 +108,16 @@ country_coordinates = {
 }
 
 # Initialize a map
-m = folium.Map(location=[54, 15], tiles="OpenStreetMap", zoom_start=4)
+m1 = folium.Map(location=[54, 15], tiles="OpenStreetMap", zoom_start=4)
 
 # Function to create a popup for each country
 def make_popup(country_row):
     return folium.Popup(f"Country: {country_row['Country']}<br>"
-                        f"RussianDependency: {country_row['RussianDependency']}<br>"
-                        f"GDPChange: {country_row['GDPChange']}<br>"
-                        f"INFChange: {country_row['INFChange']}", max_width=300)
+                        f"RussianDependency2021: {country_row['RussianDependency2021']}<br>"
+                        f"PostWarINFChange: {country_row['PostWarINFChange']}", max_width=300)
 
 # Add markers to the map
-for idx, row in FinalDF.iterrows():
+for idx, row in Main.iterrows():
     country = row['Country']
     coordinates = country_coordinates.get(country)
     if coordinates:
@@ -117,10 +125,7 @@ for idx, row in FinalDF.iterrows():
             location=coordinates,
             popup=make_popup(row),
             icon=folium.Icon(color='blue', icon='info-sign')
-        ).add_to(m)
-
-# Display the map
-m
+        ).add_to(m1)
 
 # Define country codes
 eu_country_codes = ['AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'GR', 'ES', 'FI', 'FR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK']
@@ -141,61 +146,32 @@ eu_country_geo = {
 }
 
 # Initialize the map centered around a point
-m = folium.Map(location=[54, 15], zoom_start=4)
+m2 = folium.Map(location=[54, 15], zoom_start=4)
 
 # Create a Choropleth map where the color intensity is based on the inflation change (INFChange)
 folium.Choropleth(
     geo_data=eu_country_geo,  
     name='choropleth',
-    data=FinalDF,  
-    columns=['Country_Code', 'INFChange'],  
+    data=Main,  
+    columns=['Country_Code', 'RussianDependency2021'],  
     key_on='feature.properties.NUTS_ID',  
     fill_color='YlOrRd',  
     fill_opacity=0.7,
     line_opacity=0.2,
-    legend_name='Inflation Change Rate (%)'
-).add_to(m)
-
-folium.LayerControl().add_to(m)
-
-# Display the map
-m
-
-# Define country codes
-eu_country_codes = ['AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'GR', 'ES', 'FI', 'FR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK']
-
-# Load GeoJSON file to define country boundaries
-with open('eu_countries.geojson', 'r') as f:
-    country_geo = json.load(f)
-
-# Change country code for Greece from EL to GR in the GeoJSON file
-for feature in country_geo['features']:
-    if feature['properties']['NUTS_ID'] == 'EL':
-        feature['properties']['NUTS_ID'] = 'GR'
-
-# Filter out non-EU countries from GeoJSON data
-eu_country_geo = {
-    'type': 'FeatureCollection',
-    'features': [feature for feature in country_geo['features'] if feature['properties']['NUTS_ID'] in eu_country_codes]
-}
+    legend_name='RussianDependency2021'
+).add_to(m2)
 
 # Initialize the maps centered around a point
-m = folium.Map(location=[54, 15], zoom_start=4)
+m3 = folium.Map(location=[54, 15], zoom_start=4)
 
 folium.Choropleth(
     geo_data=eu_country_geo,  
     name='choropleth',
-    data=FinalDF,  
-    columns=['Country_Code', 'GDPChange'],  
+    data=Main,  
+    columns=['Country_Code', 'PostWarINFChange'],  
     key_on='feature.properties.NUTS_ID', 
-    fill_color='YlOrRd_r', 
+    fill_color='YlOrRd', 
     fill_opacity=0.7,
     line_opacity=0.2,
-    legend_name='Another Value'
-).add_to(m)
-
-
-folium.LayerControl().add_to(m)
-
-# Display the map
-m
+    legend_name='Inflation Change'
+).add_to(m3)
