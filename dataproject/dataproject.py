@@ -12,6 +12,7 @@ import json
 # We load in our datasets 
 Main = pd.read_csv('TradeandGDP2021.csv', sep=';')
 Inf = pd.read_csv('Priceindex.csv', sep=';')
+GDP = pd.read_csv('GDP.csv', sep=';')
 
 # Replace commas with periods and convert to float for Main
 columns_to_convert = Main.columns[1:]
@@ -56,6 +57,43 @@ AVGInfChange['PostWarINFChange']= (AVGInfChange['AVGPostWarInf'] - AVGInfChange[
 
 # Merging the two dataframes
 Main = pd.merge(Main, AVGInfChange, on='Country', how='inner')
+
+columns_to_convert = GDP.columns[1:]
+for column in columns_to_convert:
+    GDP[column] = GDP[column].str.replace('.', '')  # Remove thousand separator
+    GDP[column] = GDP[column].str.replace(',', '.').astype(float) 
+
+# Calculate the percentage change in inflation for each country into a new Dataframe and dropping the first row as that becomes Nan
+gdp_change = GDP.iloc[:, 1:].pct_change().multiply(100)
+GDPChange = pd.concat([GDP['TIME'], gdp_change], axis=1)
+GDPChange = GDPChange.drop(GDPChange.index[0])
+
+# We want to calculate an avg pre war and post war for each country and fin the difference
+# Define the time periods
+gdpstart_period_1 = '2015-2'
+gdpend_period_1 = '2022-2'
+gdpstart_period_2 = '2022-3'
+gdpend_period_2 = '2023-2'
+
+# Filter the DataFrame for the first time period and calculate the mean
+gdpfirst_period = GDPChange[(GDPChange['TIME'] > gdpstart_period_1) & (GDPChange['TIME'] <= gdpend_period_1)]
+gdpavg_change_period_1 = gdpfirst_period.iloc[:, 1:].mean()  # Exclude 'TIME' column
+
+# Filter the DataFrame for the second time period and calculate the mean
+gdpsecond_period = GDPChange[(GDPChange['TIME'] > gdpstart_period_2) & (GDPChange['TIME'] <= gdpend_period_2)]
+gdpavg_change_period_2 = gdpsecond_period.iloc[:, 1:].mean()  # Exclude 'TIME' column
+
+
+AVGGDPChange = pd.DataFrame({
+    'Country': GDPChange.columns[1:],  # The first column is 'TIME' and should be excluded
+    'AVGPreWarGDP': gdpavg_change_period_1.values,
+    'AVGPostWarGDP': gdpavg_change_period_2.values
+})
+
+AVGGDPChange['PostWarGDPChange']= (AVGGDPChange['AVGPostWarGDP'] - AVGGDPChange['AVGPreWarGDP']).round(2)
+
+# Merging the two dataframes
+Main = pd.merge(Main, AVGGDPChange, on='Country', how='inner')
 
 # Adding country codes to our dataframe
 def get_country_code(country_name):
