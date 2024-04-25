@@ -10,10 +10,12 @@ import pycountry
 import json
 
 # We load in our datasets 
-Main = pd.read_csv('TradeandGDP2021.csv', sep=';')
-Inf = pd.read_csv('Priceindex.csv', sep=';')
-GDP = pd.read_csv('GDP.csv', sep=';')
+LoadMain = pd.read_csv('TradeandGDP2021.csv', sep=';')
+LoadInf = pd.read_csv('Priceindex.csv', sep=';')
+LoadGDP = pd.read_csv('GDP.csv', sep=';')
 
+# Keeping the origial dataframe for presentation
+Main=LoadMain.copy()
 # Replace commas with periods and convert to float for Main
 columns_to_convert = Main.columns[1:]
 for column in columns_to_convert:
@@ -21,6 +23,8 @@ for column in columns_to_convert:
 # Calculate RussianDependency2021
 Main['RussianDependency2021'] = ((Main['ImportFromRussia2021'] + Main['ExportToRussia2021']) / Main['GDP2021']*100).round(1)
 
+# Keeping the origial dataframe for presentation
+Inf=LoadInf.copy()
 # Replace commas with periods and convert to float for Inf
 columns_to_convert = Inf.columns[1:]
 for column in columns_to_convert:
@@ -58,6 +62,8 @@ AVGInfChange['PostWarINFChange']= (AVGInfChange['AVGPostWarInf'] - AVGInfChange[
 # Merging the two dataframes
 Main = pd.merge(Main, AVGInfChange, on='Country', how='inner')
 
+# Keeping the origial dataframe for presentation
+GDP=LoadGDP.copy()
 columns_to_convert = GDP.columns[1:]
 for column in columns_to_convert:
     GDP[column] = GDP[column].str.replace('.', '')  # Remove thousand separator
