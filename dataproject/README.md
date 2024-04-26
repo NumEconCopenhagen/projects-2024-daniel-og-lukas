@@ -1,14 +1,14 @@
 # Data analysis project
 
-Our project is titled **PROJECT TITLE** and is about EXPLAIN.
+Our project is titled Dataproject - Daniel and Lukas
 
 The **results** of the project can be seen from running [dataproject.ipynb](dataproject.ipynb).
 
 We apply the **following datasets**:
 
-1. RDependency.csv (Eurostat) 
-1. RGDPChange.csv (Eurostat)
-1. RINFChange.csv (Eurostat)
+1. TradeandGDP2021.csv (Eurostat) 
+1. GDP.csv (Eurostat)
+1. Priceindex.csv (Eurostat)
 
 **Dependencies:** Apart from a standard Anaconda Python 3 installation, the project requires the following installations:
 
