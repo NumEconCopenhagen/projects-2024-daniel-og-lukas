@@ -47,16 +47,16 @@ class modelproject():
         par = self.par
 
         # Model parameters
-        par.alpha = 0.3
+        par.alpha = 0.35
         par.n = 0.02
-        par.rho = 0.02
+        par.rho = 0.03
         par.tau = 0.00
         par.beta = 1/(1+par.rho)
         par.prod = 'cobb-douglas'
 
         # Others
-        par.K_lag_ini = 1.0 
-        par.L_lag_ini = 0.0 
+        par.K_lag_ini = 0.1 
+        par.L_lag_ini = 1.0 
         par.simT = 50 
     
     def allocate(self):
@@ -67,7 +67,7 @@ class modelproject():
 
          # a. list of variables
         household = ['C1','C2']
-        firm = ['k', 'k_lag']
+        firm = ['k', 'K_lag', 'L_lag', 'Y', 'K', 'L' ]
         prices = ['r','w']
 
         # b. allocate
@@ -92,25 +92,25 @@ class modelproject():
         for t in range(par.simT):
             
             # i. simulate before s
-            simulate_before_s(par,sim,t)
+            self.simulate_before_s(par,sim,t)
 
             if t == par.simT-1: continue          
 
-            # ii. find bracket to search
-            s_min,s_max = find_s_bracket(par,sim,t)
+            # i. find bracket to search
+            s_min,s_max = self.find_s_bracket(par,sim,t)
 
-            # iii. find optimal s
-            obj = lambda s: calc_euler_error(s,par,sim,t=t)
+            # ii. find optimal s
+            obj = lambda s: self.calc_euler_error(s,par,sim,t=t)
             result = optimize.root_scalar(obj,bracket=(s_min,s_max),method='bisect')
             s = result.root
 
-            # iiii. simulate after s
-            simulate_after_s(par,sim,t,s)
+            # iii. simulate after s
+            self.simulate_after_s(par,sim,t,s)
 
         if do_print: print(f'simulation done in {time.time()-t0:.2f} secs')
 
 
-    def find_s_bracket(par,sim,t,maxiter=500,do_print=False):
+    def find_s_bracket(self,par,sim,t,maxiter=500,do_print=False):
         """ find bracket for s to search in """
 
         # a. maximum bracket
@@ -118,7 +118,7 @@ class modelproject():
         s_max = 1.0 - 1e-8 # save almost everything
 
         # b. saving a lot is always possible 
-        value = calc_euler_error(s_max,par,sim,t)
+        value = self.calc_euler_error(s_max,par,sim,t)
         sign_max = np.sign(value)
         if do_print: print(f'euler-error for s = {s_max:12.8f} = {value:12.8f}')
 
@@ -131,7 +131,7 @@ class modelproject():
                     
             # i. midpoint and value
             s = (lower+upper)/2 # midpoint
-            value = calc_euler_error(s,par,sim,t)
+            value = self.calc_euler_error(s,par,sim,t)
 
             if do_print: print(f'euler-error for s = {s:12.8f} = {value:12.8f}')
 
@@ -157,53 +157,51 @@ class modelproject():
 
         raise Exception('cannot find bracket for s')
 
-    def calc_euler_error(s,par,sim,t):
-        """ target function for finding s with bisection """
 
-        # a. simulate forward
-        simulate_after_s(par,sim,t,s)
-        simulate_before_s(par,sim,t+1) # next period
+    def calc_euler_error(self, s, par, sim, t):
+        # Make sure to pass 's' when calling simulate_after_s
+        self.simulate_after_s(par, sim, t, s)
+        self.simulate_before_s(par, sim, t + 1)
 
-        # c. Euler equation
+        # Now continue with your Euler equation calculation
         LHS = sim.C1[t]**(-1)
-        RHS = (1+sim.r[t+1])*par.beta * sim.C2[t+1]**(-1)
-
-        return LHS-RHS
-
-    def simulate_before_s(par,sim,t):
-        """ simulate forward """
-
-        if t == 0:
-            sim.K_lag[t] = par.K_lag_ini
-            sim.L_lag[t] = par.L_lag_ini
-
-        if t > 0:
-            sim.K_lag[t] = sim.K[t-1]
-            sim.L_lag[t] = sim.L[t-1]
-
-        # a. production and factor prices
-        if par.prod == 'cobb-douglas':
-
-            # i. production
-            sim.Y[t] = ((sim.K_lag[t]**par.alpha)*(sim.L_lag[t]**(1-par.aplha)))
-
-            #ii. 
-            sim.k[t] = sim.K_lag[t] / sim.L_lag[t]
+        RHS = (1 + sim.r[t+1]) * par.beta * sim.C2[t+1]**(-1)
+        return LHS - RHS
 
 
-            # iii. factor prices
-            sim.r[t] = par.alpha*sim.k[t]**(par.alpha-1)
-            sim.w[t] = (1-par.alpha)*sim.k[t]**par.alpha
+    def simulate_before_s(self,par,sim,t):
+            """ simulate forward """
 
-        # b. consumption
-        sim.C2[t] = (1+sim.r[t])*sim.K_lag[t]
+        
+            if t > 0:
+                sim.K_lag[t] = sim.K[t-1]
+                sim.L_lag[t] = sim.L[t-1]
 
-    def simulate_after_s(par,sim,t,s):
-        """ simulate forward """
+            # a. production and factor prices
+            if par.prod == 'cobb-douglas':
 
-        # a. consumption of young
-        sim.C1[t] = sim.w[t]*(1-s)
+                # i. production
+                sim.Y[t] = ((sim.K_lag[t]**par.alpha)*(sim.L_lag[t]**(1-par.alpha)))
 
-        # b. end-of-period stocks
+                #ii. 
+                sim.k[t] = sim.K_lag[t] / sim.L_lag[t]
+
+
+                # iii. factor prices
+                sim.r[t] = par.alpha*sim.k[t]**(par.alpha-1)
+                sim.w[t] = (1-par.alpha)*sim.k[t]**par.alpha
+
+            # b. consumption
+            sim.C2[t] = (1+sim.r[t])*sim.K_lag[t]
+
+    def simulate_after_s(self, par, sim, t, s):
+        # Calculate consumption of the young
+        sim.C1[t] = sim.w[t] * (1.0 - s)
+
+        # Calculate end-of-period capital stocks
         I = sim.Y[t] - sim.C1[t] - sim.C2[t]
-        sim.K[t] =sim.K_lag[t] + I
+        sim.K[t+1] = sim.K[t] + I
+
+        # Debugging to check what is happening with I and K[t+1]
+        print(f"Time {t}, Investment I: {I}, K[t+1]: {sim.K[t+1]}")
+
