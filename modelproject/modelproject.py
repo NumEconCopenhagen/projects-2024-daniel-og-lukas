@@ -202,8 +202,8 @@ class modelproject():
         """ simulate forward """
 
         # a. consumption of young
-        sim.C1[t] = sim.w[t]
+        sim.C1[t] = sim.w[t]*(1-s)
 
         # b. end-of-period stocks
-        I = sim.Y[t] - sim.C1[t] - sim.C2[t] - sim.G[t]
-        sim.K[t] = (1-par.delta)*sim.K_lag[t] + I
+        I = sim.Y[t] - sim.C1[t] - sim.C2[t]
+        sim.K[t] =sim.K_lag[t] + I
