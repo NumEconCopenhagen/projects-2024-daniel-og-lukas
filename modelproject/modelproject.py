@@ -157,7 +157,7 @@ def calc_euler_error(s,par,sim,t):
 
     # c. Euler equation
     LHS = sim.C1[t]**(-1)
-    RHS = (1+sim.r[t+1])*par.beta * sim.C2[t+1]**(-1)
+    RHS = (1+sim.r[t+1]) * par.beta * sim.C2[t+1]**(-1)
 
     return LHS-RHS
 
@@ -165,18 +165,14 @@ def simulate_before_s(par,sim,t):
     """ simulate forward """
 
     if t > 0:
-        sim.K_lag[t] = sim.K[t-1]
-        sim.L_lag[t] = sim.L[t-1]
+        sim.K_lag[t] = sim.K_lag[t-1]
+        sim.L_lag[t] = sim.L_lag[t-1]*(1-par.n)
 
-    elif par.prod == 'cobb-douglas':
+    if par.prod == 'cobb-douglas':
 
         sim.Y[t] = sim.K_lag[t] ** par.alpha * sim.L_lag[t] ** (1 - par.alpha)
         sim.r[t] = par.alpha * (sim.K_lag[t] ** (par.alpha - 1)) * (sim.L_lag[t] ** (1 - par.alpha))
         sim.w[t] = (1 - par.alpha) * (sim.K_lag[t] ** par.alpha) * (sim.L_lag[t] ** (-par.alpha))
-
-    else:
-
-        raise NotImplementedError('unknown type of production function')
 
 
     # c. consumption
@@ -186,8 +182,10 @@ def simulate_before_s(par,sim,t):
 def simulate_after_s(par,sim,t,s):
     """ simulate forward """
 
+    sim.k[t]=sim.K_lag[t]/sim.L_lag[t]
     # a. consumption of young
     sim.C1[t] = sim.w[t]*(1.0-s)
+
 
     # b. end-of-period stocks
     I = sim.Y[t] - sim.C1[t] - sim.C2[t]
