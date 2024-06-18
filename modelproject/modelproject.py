@@ -27,7 +27,6 @@ class OLGModelClass():
 
         # Model parameters
         par.alpha = 0.35
-        par.n = 0.02
         par.rho = 0.03
 
         # Others
@@ -83,7 +82,7 @@ def simulate_before_s(par,sim,t,s):
         sim.w[t] = (1 - par.alpha) * (sim.K_lag[t] ** par.alpha)
 
         # capital acumulation
-        sim.k[t] = ((1 - par.alpha) * sim.K_lag[t]**par.alpha) / ((1 + par.n) * (2 + par.rho))
+        sim.k[t] = ((1 - par.alpha) * sim.K_lag[t]**par.alpha) / (2 + par.rho)
        
 
         # c. consumption when old
