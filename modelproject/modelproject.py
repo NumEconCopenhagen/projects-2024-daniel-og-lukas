@@ -123,7 +123,7 @@ class OLGPAYG():
         # Model parameters
         par.alpha = 0.35
         par.rho = 0.03
-        par.tau = 0.05
+        par.tau = 0.1
 
         # Others
         par.K_lag_ini = 0.1
