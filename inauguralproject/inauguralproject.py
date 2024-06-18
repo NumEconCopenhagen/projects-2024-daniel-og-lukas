@@ -82,13 +82,51 @@ class ExchangeEconomyClass:
         ax_A.legend(frameon=True, loc='upper right', bbox_to_anchor=(1.6, 1.0))
 
         plt.show()
-    
-    def find_market_equilibrium_price(model, p1):
-    # We define a function to find the root of the excess demand
-        def excess_demand(p1):
-            eps1, _ = model.check_market_clearing(p1)
-            return eps1
 
-        # We use a root finding algorithm to find the market-clearing price
-        p1_equilibrium = brentq(excess_demand, 0.01, 10)
-        return p1_equilibrium
+class ExchangeEconomyClass2:
+    def __init__(self, w1A, w2A):
+        par = self.par = SimpleNamespace()
+
+        # a. preferences
+        par.alpha = 1/3
+        par.beta = 2/3
+
+        # b. endowments
+        par.w1A = w1A
+        par.w2A = w2A
+        par.w1B = 1 - par.w1A 
+        par.w2B = 1 - par.w2A
+
+    def utility_A(self, x1A, x2A):
+        return x1A**self.par.alpha * x2A**(1-self.par.alpha)
+
+    def utility_B(self, x1B, x2B):
+        return x1B**self.par.beta * x2B**(1-self.par.beta)
+
+    def demand_A(self, p1):
+        budget = p1 * self.par.w1A + self.par.w2A
+        return self.par.alpha * budget / p1, (1 - self.par.alpha) * budget
+
+    def demand_B(self, p1):
+        budget = p1 * self.par.w1B + self.par.w2B
+        return self.par.beta * budget / p1, (1 - self.par.beta) * budget
+
+    def check_market_clearing(self, p1):
+        x1A, x2A = self.demand_A(p1)
+        x1B, x2B = self.demand_B(p1)
+
+        eps1 = x1A + x1B - 1
+        eps2 = x2A + x2B - 1
+
+        return eps1, eps2
+
+def find_market_equilibrium_price(economy):
+    # We define a function to find the root of the excess demand
+    def excess_demand(p1):
+        eps1, _ = economy.check_market_clearing(p1)
+        return eps1
+
+    # We use a root finding algorithm to find the market-clearing price
+    p1_equilibrium = brentq(excess_demand, 0.01, 10)
+    return p1_equilibrium
+
