@@ -28,6 +28,7 @@ class OLGModelClass():
         # Model parameters
         par.alpha = 0.35
         par.rho = 0.03
+        par.tau = 0.00
 
         # Others
         par.K_lag_ini = 0.1
