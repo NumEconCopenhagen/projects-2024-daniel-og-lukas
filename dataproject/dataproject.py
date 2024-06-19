@@ -21,7 +21,7 @@ columns_to_convert = Main.columns[1:]
 for column in columns_to_convert:
     Main[column] = Main[column].str.replace(',', '.').astype(float).round(1)
 # Calculate RussianDependency2021
-Main['RussianDependency2021'] = ((Main['ImportFromRussia2021'] + Main['ExportToRussia2021']) / Main['GDP2021']*100).round(1)
+Main['RussianDependency2021'] = (Main['ImportFromRussia2021'] / Main['GDP2021']*100).round(1)
 
 # Keeping the origial dataframe for presentation
 Inf=LoadInf.copy()
