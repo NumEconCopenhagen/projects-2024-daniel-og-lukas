@@ -1,6 +1,6 @@
 # Data analysis project
 
-Our project is titled Dataproject - Daniel and Lukas
+Our project is titled Dataproject -
 
 The **results** of the project can be seen from running [dataproject.ipynb](dataproject.ipynb).
 
